@@ -1,4 +1,5 @@
-﻿using Vortice.Direct2D1;
+﻿using LyricMotion.Mode_Enum;
+using Vortice.Direct2D1;
 using YukkuriMovieMaker.Commons;
 using YukkuriMovieMaker.Player.Video;
 
@@ -26,6 +27,7 @@ namespace LyricMotion
 
             var textIndex = effectDescription.InputIndex;
             var offset = item.Offset.GetValue(frame, length, fps);
+            var mutual_offset = item.Mutual_Offset.GetValue(frame, length, fps);
             var distance = item.Distance.GetValue(frame, length, fps);
 
             var dx = item.Direction_X;
@@ -55,7 +57,16 @@ namespace LyricMotion
                 return effectDescription.DrawDescription;
 
             int seed = ((100 + textIndex + (int)offset) * (100 + textIndex)) + textIndex;
-            int rand = new Random(seed % int.MaxValue).Next(directions.Count);
+            int rand;
+            if (item.Enum_Mode == DisplayMode.Random)
+            {
+                rand = new Random(seed % int.MaxValue).Next(directions.Count);
+            }
+            else
+            {
+                rand = (textIndex + 1 + (int)mutual_offset) % directions.Count;
+            }
+
             var (xDir, yDir) = directions[rand];
 
 
