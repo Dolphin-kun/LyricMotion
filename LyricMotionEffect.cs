@@ -90,6 +90,11 @@ namespace LyricMotion
         public bool Same_Direction { get => same_Direction; set => Set(ref same_Direction, value); }
         bool same_Direction = false;
 
+        [Display(GroupName = "アニメーション詳細", Name = "サイズを固定", Description = "サイズを固定")]
+        [ToggleSlider]
+        public bool FixSize { get => fixSize; set => Set(ref fixSize, value); }
+        bool fixSize = false;
+
         [Display(GroupName = "アニメーション詳細", Name = "表示方法", Description = "テキストの表示方法")]
         [EnumComboBox]
         public DisplayMode Enum_Mode { get => mode; set => Set(ref mode, value); }

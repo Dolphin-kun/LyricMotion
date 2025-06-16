@@ -1,4 +1,5 @@
 ﻿using LyricMotion.Mode_Enum;
+using System.Numerics;
 using Vortice.Direct2D1;
 using YukkuriMovieMaker.Commons;
 using YukkuriMovieMaker.Player.Video;
@@ -11,7 +12,8 @@ namespace LyricMotion
         readonly LyricMotionEffect item;
         ID2D1Image? input;
 
-        public ID2D1Image Output => input ?? throw new NullReferenceException(nameof(input) + "is null");
+        ID2D1CommandList? commandList;
+        public ID2D1Image Output => item.FixSize ? (commandList ?? input ?? throw new NullReferenceException(nameof(input) + " is null")) : (input ?? throw new NullReferenceException(nameof(input) + " is null"));
 
         public LyricMotionEffectProcessor(IGraphicsDevicesAndContext devices, LyricMotionEffect item)
         {
@@ -21,6 +23,9 @@ namespace LyricMotion
 
         public DrawDescription Update(EffectDescription effectDescription)
         {
+            if (input == null)
+                return effectDescription.DrawDescription;
+
             var frame = effectDescription.ItemPosition.Frame;
             var length = effectDescription.ItemDuration.Frame;
             var fps = effectDescription.FPS;
@@ -87,16 +92,54 @@ namespace LyricMotion
             double x = xDir * easingRate * distance;
             double y = yDir * easingRate * distance;
 
-            var drawDesc = effectDescription.DrawDescription;
-            return drawDesc with
+            if (item.FixSize)
             {
-                Draw = new(
-                    drawDesc.Draw.X + (float)x,
-                    drawDesc.Draw.Y + (float)y,
-                    drawDesc.Draw.Z
-                ),
-            };
+                var dc = devices.DeviceContext;
 
+                commandList?.Dispose();
+                commandList = dc.CreateCommandList();
+
+                dc.Target = commandList;
+                dc.BeginDraw();
+                dc.Clear(null);
+
+                var bounds = devices.DeviceContext.GetImageLocalBounds(input);
+
+                using (var layer = dc.CreateLayer())
+                {
+                    dc.PushLayer(new LayerParameters1
+                    {
+                        ContentBounds = bounds,
+                        MaskAntialiasMode = AntialiasMode.PerPrimitive,
+                        Opacity = 1.0f,
+                        LayerOptions = LayerOptions1.None,
+                    }, layer);
+                }
+
+                dc.Transform = Matrix3x2.CreateTranslation((float)x, (float)y);
+                dc.DrawImage(input);
+                dc.Transform = Matrix3x2.Identity;
+
+                dc.PopLayer();
+
+                dc.EndDraw();
+                commandList.Close();
+
+                return effectDescription.DrawDescription;
+            }
+            else
+            {
+                var drawDesc = effectDescription.DrawDescription;
+                return drawDesc with
+                {
+                    Draw = new(
+                        drawDesc.Draw.X + (float)x,
+                        drawDesc.Draw.Y + (float)y,
+                        drawDesc.Draw.Z
+                    ),
+
+                };
+            }
         }
 
 
@@ -112,6 +155,7 @@ namespace LyricMotion
 
         public void Dispose()
         {
+            commandList?.Dispose();
         }
     }
 
