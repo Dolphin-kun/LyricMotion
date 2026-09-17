@@ -1,18 +1,3 @@
-<<<<<<< HEAD
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace LyricMotion.Mode_Enum
-{
-    public enum DisplayMode
-    {
-        [Display(Name = "ランダム", Description = "ランダムの方向からアニメーション")]
-        Random = 1,
-
-        [Display(Name = "交互", Description = "交互の方向からアニメーション")]
-        Mutual = 2,
-    }
-}
-=======
 using System.ComponentModel.DataAnnotations;
 
 namespace LyricMotion.Mode_Enum
@@ -35,5 +20,3 @@ namespace LyricMotion.Mode_Enum
         Animation = 2,
     }
 }
-
->>>>>>> 214a2f9 (Initial commit: Add custom easing support)
