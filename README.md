@@ -10,7 +10,9 @@
 2. テキストの`文字ごとに分割`をオンにしてください。
 
 ## パラメータ
-![スクリーンショット 2025-06-16 224702](https://github.com/user-attachments/assets/38105931-0438-45cd-8eba-5c6b607c9430)
+<img width="497" height="410" alt="スクリーンショット 2026-09-17 160309" src="https://github.com/user-attachments/assets/a1c2978e-55fa-48dd-bbe1-0342218a655d" />
+<img width="506" height="438" alt="スクリーンショット 2026-09-17 160257" src="https://github.com/user-attachments/assets/3e5e537d-0c6b-4ab5-87ee-42cc6bb2c099" />
+
 
 ## 効果
 ### 登場時・退場時

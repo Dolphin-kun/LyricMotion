@@ -10,7 +10,7 @@ using YukkuriMovieMaker.Plugin.Effects;
 
 namespace LyricMotion
 {
-    [VideoEffect("リリックモーションしながら登場退場", ["登場退場"], ["リリックモーション", "Lyric Motion", "ririkku"],IsAviUtlSupported =false)]
+    [VideoEffect("リリックモーションしながら登場退場", [VideoEffectCategories.Transition], ["リリックモーション", "Lyric Motion", "ririkku"], IsAviUtlSupported = false)]
     internal class LyricMotionEffect : VideoEffectBase
     {
         public override string Label
@@ -27,7 +27,6 @@ namespace LyricMotion
             }
         }
 
-        //登場退場
         [Display(GroupName = "登場退場", Name = "登場時", Description = "アイテムが登場する際にエフェクトを適用する")]
         [ToggleSlider]
         public bool EffectEnter
@@ -47,8 +46,6 @@ namespace LyricMotion
         bool effectExit = true;
 
 
-
-
         [Display(GroupName = "登場退場", Name = "効果時間", Description = "エフェクトが再生される秒数")]
         [TextBoxSlider("F2", "秒", 0, 0.5)]
         [DefaultValue(0d)]
@@ -60,15 +57,27 @@ namespace LyricMotion
         [AnimationSlider("F1", "px", -100.0, 100.0)]
         public Animation Distance { get; } = new Animation(100.0, -99999.0, 99999.0);
 
+        [Display(GroupName = "登場退場", Name = "イージング", Description = "イージングの指定方法")]
+        [EnumComboBox]
+        public EasingSetting EasingSetting { get => easingSetting; set => Set(ref easingSetting, value); }
+        EasingSetting easingSetting = EasingSetting.Default;
+
         [Display(GroupName = "登場退場", Name = "種類", Description = "アニメーションの種類")]
         [EnumComboBox]
+        [ShowPropertyEditorWhen(nameof(EasingSetting), EasingSetting.Default)]
         public EasingType EasingType { get => easingType; set => Set(ref easingType, value); }
         EasingType easingType = EasingType.Expo;
 
         [Display(GroupName = "登場退場", Name = "加減速", Description = "アニメーションの加減速")]
         [EnumComboBox]
+        [ShowPropertyEditorWhen(nameof(EasingSetting), EasingSetting.Default)]
         public EasingMode EasingMode { get => easingMode; set => Set(ref easingMode, value); }
         EasingMode easingMode = EasingMode.Out;
+
+        [Display(GroupName = "登場退場", Name = "進行度", Description = "アニメーション進行度")]
+        [AnimationSlider("F1", "%", -100.0, 100.0)]
+        [ShowPropertyEditorWhen(nameof(EasingSetting), EasingSetting.Animation)]
+        public Animation CustomEasing { get; } = new Animation(0.0, -99999.0, 99999.0) { AnimationType = AnimationType.Elastic_Out };
 
         [Display(GroupName = "アニメーション詳細", Name = "X方向", Description = "X方向")]
         [ToggleSlider]
@@ -121,6 +130,6 @@ namespace LyricMotion
             return new LyricMotionEffectProcessor(devices, this);
         }
 
-        protected override IEnumerable<IAnimatable> GetAnimatables() => [Distance, Offset, Mutual_Offset];
+        protected override IEnumerable<IAnimatable> GetAnimatables() => [Distance, Offset, Mutual_Offset, CustomEasing];
     }
 }

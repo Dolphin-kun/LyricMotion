@@ -23,6 +23,9 @@ namespace LyricMotion
 
         public DrawDescription Update(EffectDescription effectDescription)
         {
+            commandList?.Dispose();
+            commandList = null;
+
             if (input == null)
                 return effectDescription.DrawDescription;
 
@@ -89,19 +92,39 @@ namespace LyricMotion
             var (xDir, yDir) = directions[rand];
 
 
+            long playFrames = Math.Max(1, (long)Math.Round(item.PlayTime * fps));
+
             double easingRate;
             if (isEnter)
             {
-                double rate = timePos / item.PlayTime;
-                double eased = Easing.GetValue(item.EasingType, item.EasingMode, Math.Clamp(rate, 0, 1));
-                easingRate = 1 - eased;
+                if (item.EasingSetting == EasingSetting.Default)
+                {
+                    double rate = timePos / item.PlayTime;
+                    double eased = Easing.GetValue(item.EasingType, item.EasingMode, Math.Clamp(rate, 0, 1));
+                    easingRate = 1 - eased;
+                }
+                else
+                {
+                    long currentFrame = Math.Clamp(frame, 0, playFrames);
+                    double progress = item.CustomEasing.GetValue(currentFrame, playFrames, fps) / 100.0;
+                    easingRate = 1 - progress;
+                }
             }
             else
             {
-                double remaining = totalTime - timePos;
-                double rate = remaining / item.PlayTime;
-                double eased = Easing.GetValue(item.EasingType, item.EasingMode, Math.Clamp(rate, 0, 1));
-                easingRate = (1 - eased) * (item.Same_Direction ? -1 : 1);
+                if (item.EasingSetting == EasingSetting.Default)
+                {
+                    double remaining = totalTime - timePos;
+                    double rate = remaining / item.PlayTime;
+                    double eased = Easing.GetValue(item.EasingType, item.EasingMode, Math.Clamp(rate, 0, 1));
+                    easingRate = (1 - eased) * (item.Same_Direction ? -1 : 1);
+                }
+                else
+                {
+                    long exitFrame = Math.Clamp(frame - (length - playFrames), 0, playFrames);
+                    double progress = item.CustomEasing.GetValue(exitFrame, playFrames, fps) / 100.0;
+                    easingRate = progress * (item.Same_Direction ? -1 : 1);
+                }
             }
 
             double x = xDir * easingRate * distance;
@@ -110,15 +133,15 @@ namespace LyricMotion
             if (item.FixSize)
             {
                 var dc = devices.DeviceContext;
+                var oldTarget = dc.Target;
 
-                commandList?.Dispose();
                 commandList = dc.CreateCommandList();
 
                 dc.Target = commandList;
                 dc.BeginDraw();
                 dc.Clear(null);
 
-                var bounds = devices.DeviceContext.GetImageLocalBounds(input);
+                var bounds = dc.GetImageLocalBounds(input);
 
                 using (var layer = dc.CreateLayer())
                 {
@@ -129,16 +152,17 @@ namespace LyricMotion
                         Opacity = 1.0f,
                         LayerOptions = LayerOptions1.None,
                     }, layer);
+
+                    dc.Transform = Matrix3x2.CreateTranslation((float)x, (float)y);
+                    dc.DrawImage(input);
+                    dc.Transform = Matrix3x2.Identity;
+
+                    dc.PopLayer();
                 }
-
-                dc.Transform = Matrix3x2.CreateTranslation((float)x, (float)y);
-                dc.DrawImage(input);
-                dc.Transform = Matrix3x2.Identity;
-
-                dc.PopLayer();
 
                 dc.EndDraw();
                 commandList.Close();
+                dc.Target = oldTarget;
 
                 return effectDescription.DrawDescription;
             }
@@ -160,6 +184,8 @@ namespace LyricMotion
 
         public void ClearInput()
         {
+            commandList?.Dispose();
+            commandList = null;
             input = null;
         }
 
