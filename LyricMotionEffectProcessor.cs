@@ -13,7 +13,9 @@ namespace LyricMotion
         ID2D1Image? input;
 
         ID2D1CommandList? commandList;
-        public ID2D1Image Output => item.FixSize ? (commandList ?? input ?? throw new NullReferenceException(nameof(input) + " is null")) : (input ?? throw new NullReferenceException(nameof(input) + " is null"));
+        public ID2D1Image Output => (item.FixSize && commandList != null)
+            ? commandList
+            : (input ?? throw new NullReferenceException(nameof(input) + " is null"));
 
         public LyricMotionEffectProcessor(IGraphicsDevicesAndContext devices, LyricMotionEffect item)
         {
@@ -23,6 +25,10 @@ namespace LyricMotion
 
         public DrawDescription Update(EffectDescription effectDescription)
         {
+            // 前フレームの CommandList を確実に破棄・初期化
+            commandList?.Dispose();
+            commandList = null;
+
             if (input == null)
                 return effectDescription.DrawDescription;
 
@@ -94,7 +100,7 @@ namespace LyricMotion
                     easingRate = 1.0 - progress;
                 }
             }
-            if (isExit)
+            else if (isExit)
             {
                 if (item.EasingSetting == EasingSetting.Simple)
                 {
@@ -117,15 +123,15 @@ namespace LyricMotion
             if (item.FixSize)
             {
                 var dc = devices.DeviceContext;
+                var oldTarget = dc.Target;
 
-                commandList?.Dispose();
                 commandList = dc.CreateCommandList();
 
                 dc.Target = commandList;
                 dc.BeginDraw();
                 dc.Clear(null);
 
-                var bounds = devices.DeviceContext.GetImageLocalBounds(input);
+                var bounds = dc.GetImageLocalBounds(input);
 
                 using (var layer = dc.CreateLayer())
                 {
@@ -136,16 +142,17 @@ namespace LyricMotion
                         Opacity = 1.0f,
                         LayerOptions = LayerOptions1.None,
                     }, layer);
+
+                    dc.Transform = Matrix3x2.CreateTranslation((float)x, (float)y);
+                    dc.DrawImage(input);
+                    dc.Transform = Matrix3x2.Identity;
+
+                    dc.PopLayer();
                 }
-
-                dc.Transform = Matrix3x2.CreateTranslation((float)x, (float)y);
-                dc.DrawImage(input);
-                dc.Transform = Matrix3x2.Identity;
-
-                dc.PopLayer();
 
                 dc.EndDraw();
                 commandList.Close();
+                dc.Target = oldTarget;
 
                 return effectDescription.DrawDescription;
             }
@@ -167,6 +174,8 @@ namespace LyricMotion
 
         public void ClearInput()
         {
+            commandList?.Dispose();
+            commandList = null;
             input = null;
         }
 
@@ -178,6 +187,7 @@ namespace LyricMotion
         public void Dispose()
         {
             commandList?.Dispose();
+            commandList = null;
         }
     }
 
