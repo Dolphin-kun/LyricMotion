@@ -121,9 +121,9 @@ namespace LyricMotion
                 }
                 else
                 {
-                    long exitFrame = Math.Clamp(frame - (length - playFrames), 0, playFrames);
-                    double progress = item.CustomEasing.GetValue(exitFrame, playFrames, fps) / 100.0;
-                    easingRate = progress * (item.Same_Direction ? -1 : 1);
+                    long remainingFrame = Math.Clamp(length - frame, 0, playFrames);
+                    double progress = item.CustomEasing.GetValue(remainingFrame, playFrames, fps) / 100.0;
+                    easingRate = (1 - progress) * (item.Same_Direction ? -1 : 1);
                 }
             }
 
